@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MrBeast Style Thumbnail Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+    <style>
+        .thumbnail-text {
+            font-family: 'Anton', sans-serif;
+            -webkit-text-stroke: 2px black;
+            text-stroke: 2px black;
+            paint-order: stroke fill;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.7);
+        }
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-yellow-300">MrBeast Style Thumbnail Generator</h1>
+            <p class="text-gray-400 mt-2">Create eye-catching thumbnails with AI!</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+                <h2 class="text-2xl font-bold mb-4 border-b border-gray-700 pb-2">1. Describe Your Thumbnail</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="main-subject" class="block text-sm font-medium text-gray-300 mb-1">Main Subject</label>
+                        <input type="text" id="main-subject" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-400 focus:outline-none" placeholder="e.g., A mountain of cash">
+                    </div>
+                    <div>
+                        <label for="background-desc" class="block text-sm font-medium text-gray-300 mb-1">Background Description</label>
+                        <input type="text" id="background-desc" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-400 focus:outline-none" placeholder="e.g., Bright blue sky, game show studio">
+                    </div>
+                    <div>
+                        <label for="overlay-text" class="block text-sm font-medium text-gray-300 mb-1">Overlay Text</label>
+                        <input type="text" id="overlay-text" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-400 focus:outline-none" placeholder="e.g., I BOUGHT AN ISLAND!">
+                    </div>
+                </div>
+                 <button id="generate-btn" class="mt-6 w-full bg-yellow-400 text-gray-900 font-bold py-3 px-4 rounded-lg hover:bg-yellow-500 transition-transform transform hover:scale-105 shadow-lg">
+                    Generate Thumbnail
+                </button>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg flex flex-col justify-center items-center aspect-video">
+                 <h2 class="text-2xl font-bold mb-4 text-center">2. Your Generated Thumbnail</h2>
+                <div id="thumbnail-container" class="w-full relative rounded-lg overflow-hidden border-2 border-dashed border-gray-600 aspect-video flex justify-center items-center">
+                    <div id="loader" class="hidden loader"></div>
+                    <img id="thumbnail-image" src="https://placehold.co/1280x720/1f2937/4b5563?text=Your+Thumbnail+Here" class="w-full h-full object-cover" alt="Generated Thumbnail">
+                    <div id="text-overlay" class="thumbnail-text absolute bottom-4 left-4 right-4 text-5xl md:text-6xl lg:text-7xl text-white uppercase text-center leading-tight">
+                        Overlay Text
+                    </div>
+                </div>
+                 <p id="message-box" class="mt-4 text-center text-red-400"></p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const generateBtn = document.getElementById('generate-btn');
+        const mainSubjectInput = document.getElementById('main-subject');
+        const backgroundDescInput = document.getElementById('background-desc');
+        const overlayTextInput = document.getElementById('overlay-text');
+        const thumbnailImage = document.getElementById('thumbnail-image');
+        const textOverlay = document.getElementById('text-overlay');
+        const loader = document.getElementById('loader');
+        const messageBox = document.getElementById('message-box');
+
+        generateBtn.addEventListener('click', generateThumbnail);
+
+        async function generateThumbnail() {
+            const mainSubject = mainSubjectInput.value;
+            const background = backgroundDescInput.value;
+            const overlayText = overlayTextInput.value;
+
+            if (!mainSubject || !background) {
+                displayMessage("Please fill in both the main subject and background description.");
+                return;
+            }
+
+            showLoading(true);
+            displayMessage("");
+            textOverlay.textContent = overlayText.toUpperCase() || '';
+
+            const prompt = `
+                Create a photorealistic, vibrant, high-contrast, colorful, and dramatic YouTube thumbnail image.
+                The main subject is: "${mainSubject}".
+                The background is: "${background}".
+                In the foreground, include a young man with a comically shocked and excited facial expression, with a wide-open mouth and wide eyes, pointing towards the main subject.
+                The style should be extremely eye-catching, professionally shot with a high-quality camera, and look like a viral video thumbnail from MrBeast. Do not include any text in the image.
+            `;
+
+            try {
+                const apiKey = ""; // Add your Google API key here
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+                const payload = {
+                    instances: [{ prompt: prompt }],
+                    parameters: { sampleCount: 1 }
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+                    const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                    thumbnailImage.src = imageUrl;
+                } else {
+                    throw new Error("The AI did not return a valid image. Please try a different prompt.");
+                }
+
+            } catch (error) {
+                console.error("Error generating image:", error);
+                displayMessage(`Error: ${error.message}`);
+                thumbnailImage.src = 'https://placehold.co/1280x720/1f2937/4b5563?text=Generation+Failed';
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showLoading(isLoading) {
+            if (isLoading) {
+                loader.classList.remove('hidden');
+                thumbnailImage.classList.add('hidden');
+                textOverlay.classList.add('hidden');
+            } else {
+                loader.classList.add('hidden');
+                thumbnailImage.classList.remove('hidden');
+                textOverlay.classList.remove('hidden');
+            }
+        }
+
+        function displayMessage(message) {
+            messageBox.textContent = message;
+        }
+    </script>
+</body>
+</html>
